@@ -1,0 +1,197 @@
+﻿@page "/Products"
+@using MyDtos
+@using MyBlazorApp.Components
+@inherits ProductBase
+
+<style>
+    .custom-width-btn {
+        width: 100px;
+    }
+</style>
+
+<PageTitle>Products</PageTitle>
+
+<h3 class="mb-5">Products</h3>
+
+@if (Products == null)
+{
+    <h5>Loading Products...</h5>
+}
+else
+{
+
+    @if (Products.Any())
+    {
+        var totalPages = TotalPages;
+
+
+        <div class="row mt-5">
+            <div class="col-sm-8">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")" style="cursor: @(currentPage == 1 ? "not-allowed" : "pointer")">
+                            <a class="page-link" @onclick="(() => ChangePage(currentPage - 1))">Previous</a>
+                        </li>
+                        @for (int pageno = 1; pageno <= totalPages; pageno++)
+                        {
+                            int i = pageno;
+                            <li class="page-item @(pageno == currentPage ? "active" : "")"
+                                style="cursor: @(pageno == currentPage ? "not-allowed" : "pointer")">
+                                <a class="page-link" @onclick="(() => ChangePage(i))">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")" style="cursor: @(currentPage == totalPages ? "not-allowed" : "pointer")">
+                            <a class="page-link" @onclick="(() => ChangePage(currentPage + 1))">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            <div class="col-sm-4">
+                <ul class="pagination justify-content-end">
+                    <li class="page-item">
+                        <a class="page-link" style="cursor:pointer" @onclick="(() => LoadProducts())">
+                            Refresh
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Product Id</th>
+                        <th>Product Name</th>
+                        <th>Product Description</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @foreach (var item in Products)
+                    {
+                        @*<tr>
+            <td>@item.Id</td>
+            <td>@item.Name</td>
+            <td>@item.Description</td>
+            <td class="text-center">
+            <button class="btn btn-danger" @onclick="() => DeleteProduct(item.Id)">Delete</button>
+            </td>
+            </tr>*@
+                        <tr>
+                            <td>@item.Id</td>
+                            <td>
+                                @if (item.IsEditing)
+                                {
+                                    <input class="form-control" type="text" @bind="@item.Name" />
+                                }
+                                else
+                                {
+                                    @item.Name
+                                }
+                            </td>
+                            <td>
+                                @if (item.IsEditing)
+                                {
+                                    <input class="form-control" type="text" @bind="@item.Description" />
+                                }
+                                else
+                                {
+                                    @item.Description
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (!item.IsEditing)
+                                {
+                                    <button class="btn btn-primary custom-width-btn" @onclick="() => StartEditing(item)">Edit</button>
+                                    <button class="btn btn-danger custom-width-btn" @onclick="() => DeleteProduct(item.Id)">Delete</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-success custom-width-btn" @onclick="() => UpdateProduct(item)">Update</button>
+                                    <button class="btn btn-secondary custom-width-btn" @onclick="() => CancelEditing(item)">Cancel</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    <tr>
+                        <td></td>
+                        <td>
+                            <input @bind="newProductName" class="form-control" placeholder="Product Name" />
+                            @if (!string.IsNullOrEmpty(productNameError))
+                            {
+                                <div class="text-danger">@productNameError</div>
+                            }
+                        </td>
+                        <td>
+                            <input @bind="newProductDescription" class="form-control" placeholder="Product Description" />
+                            @if (!string.IsNullOrEmpty(productDescriptionError))
+                            {
+                                <div class="text-danger">@productDescriptionError</div>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-success" style="width: 200px" @onclick="() => AddProduct(newProductName, newProductDescription)">Add Product</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    }
+    else
+    {
+        <p>No products found.</p>
+    }
+}
+
+
+@code {
+    // ... other code ...
+    private ProductDto originalProduct = new ProductDto();
+    private ProductDto editingProduct; // Store the currently editing product
+
+    private void StartEditing(ProductDto product)
+    {
+        // If another item is already being edited, cancel its editing
+        if (editingProduct != null && editingProduct != product)
+        {
+            CancelEditing(editingProduct);
+        }
+
+        originalProduct.Id = product.Id;
+        originalProduct.Name = product.Name;
+        originalProduct.Description = product.Description;
+
+        product.IsEditing = true;
+        editingProduct = product;
+    }
+
+    private async Task UpdateProduct(ProductDto product)
+    {
+        //Validation
+        if (string.IsNullOrEmpty(product.Name) || string.IsNullOrEmpty(product.Description))
+        {
+            ToastService.ShowError("Product Name and Description should not be empty.");
+            return;
+        }
+        // Perform the update logic using ProductService
+        await UpdateProductAsync(product.Id, product);
+
+        product.IsEditing = false;
+        editingProduct = null; // Clear the editingProduct after updating
+    }
+
+    private void CancelEditing(ProductDto product)
+    {
+        // Reset the product to its original values
+        product.Id = originalProduct.Id;
+        product.Name = originalProduct.Name;
+        product.Description = originalProduct.Description;
+
+        product.IsEditing = false;
+        editingProduct = null; // Clear the editingProduct after canceling
+        originalProduct = new ProductDto();
+    }
+}

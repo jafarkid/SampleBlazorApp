@@ -1,0 +1,34 @@
+﻿@page "/"
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@using MyBlazorApp.Services
+@using MyBlazorApp.Services.Interfaces;
+
+<h4>Loading...</h4>
+
+@code {
+    [Inject]
+    private IAuthService AuthService { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckTokenAndRedirect();
+        }
+    }
+
+    private async Task CheckTokenAndRedirect()
+    {
+        if (await AuthService.IsAuthenticated())
+        {
+            // Token exists, redirect to Products page
+            NavigationManager.NavigateTo("/products");
+        }
+        else
+        {
+            // Token does not exist, redirect to Login page
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+}

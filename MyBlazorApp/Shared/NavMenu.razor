@@ -1,0 +1,93 @@
+﻿@using Blazored.LocalStorage;
+@using MyBlazorApp.Components;
+@inject SessionStateService SessionStateService;
+@inject ILocalStorageService ILocalStorageService
+@inject NavigationManager NavigationManager
+
+<!-- Show other links when a token is present -->
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">MyBlazorApp</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <AuthorizeView>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="oi oi-account-login" aria-hidden="true"></span> Login
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="fetchdata">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Fetch data
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="products" Match="NavLinkMatch.All">
+                        <span class="oi oi-dashboard" aria-hidden="true"></span> Products
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="fetchdata">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Fetch data
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <a class="nav-link" @onclick="Logout">
+                        <span class="oi oi-account-logout" aria-hidden="true"></span> Logout
+                    </a>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+
+@code {
+
+    //protected override async Task OnAfterRenderAsync(bool firstrender)
+    //{
+    //    if (firstrender)
+    //    {
+    //        // Retrieve the token from session storage and set it in the SessionStateService
+    //        var token = await ILocalStorageService.GetItemAsync<string>("token");
+    //        if (!string.IsNullOrEmpty(token))
+    //        {
+    //            SessionStateService.Token = token;
+    //            StateHasChanged();
+    //        }
+    //    }
+    //}
+
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task Logout()
+    {
+        // Perform any logout-related tasks, such as clearing the token or session state
+        // Here, we'll simply navigate back to the login page and clear the token from LocalStorage
+
+        // Clear the token from the SessionStateService (if you're using it)
+        SessionStateService.Token = null;
+
+        // Clear the token from LocalStorage using the ILocalStorageService
+        await ILocalStorageService.RemoveItemAsync("token");
+
+        // Navigate back to the login page
+        NavigationManager.NavigateTo("/", true);
+    }
+}
